@@ -8,7 +8,14 @@ const  signUpValidation=(user)=>
                   .min(5)
                   .max(30)
                   .required(),
-                    
+
+    
+        username: Joi.string()
+                    .min(5)
+                    .alphanum()
+                    .max(50)
+                    .required(),
+             
         email: Joi.string()
                .email()
                .min(5)

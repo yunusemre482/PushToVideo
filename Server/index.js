@@ -1,14 +1,12 @@
 const express=require('express');
-const path = require('path');
-const url = require('url');
-const cookieParser = require('cookie-parser')
-const session = require('express-session')
-const minimist = require('minimist');
-const ws = require('ws');
-const kurento = require('kurento-client');
-const fs    = require('fs');
 const http = require('http');
-
+var path = require('path');
+var url = require('url');
+var minimist = require('minimist');
+var ws = require('ws');
+var kurento = require('kurento-client');
+var fs = require('fs');
+var https = require('https');
 const app = express();
 const authRoutes = require('./routes/auth');
 const mongoose = require('mongoose');
@@ -20,116 +18,147 @@ mongoose.connect(process.env.DB_CONNECT ,{ useNewUrlParser: true  , useUnifiedTo
     console.log("connected to DB");
 });
 
+const server = http.createServer(app);
 
 app.use(express.json());
 //middleware of  routes
 app.use("/api/user/" ,authRoutes);
-let argv = minimist(process.argv.slice(2), {
-    default: {
-        as_uri: 'http://localhost:8443/',
-        ws_uri: 'ws://localhost:8888/kurento'
-    }
+
+var argv = minimist(process.argv.slice(2), {
+	default: {
+		as_uri: 'https://localhost:8555',
+		ws_uri: 'ws://localhost:8888/kurento'
+	}
+});
+var options =
+{
+	key: fs.readFileSync('keys/server.key'),
+	cert: fs.readFileSync('keys/server.crt'),
+	
+};
+var idCounter = 0;
+var candidatesQueue = {};
+var kurentoClient = null;
+var presenter = null;
+var viewers = [];
+var sessionId;
+var viewersList = [];
+presenterWS = null
+
+var asUrl = url.parse(argv.as_uri);
+var port = asUrl.port;
+var server = https.createServer(options, app).listen(port, function () {
+	
+
+	console.log('Open ' + url.format(asUrl));
 });
 
-
-/*
- * Management of sessions
- */
-app.use(cookieParser());
-
-let sessionHandler = session({
-    secret : 'none',
-    rolling : true,
-    resave : true,
-    saveUninitialized : true
+var wss = new ws.Server({
+	server: server,
+	
 });
 
-app.use(sessionHandler);
-
-/*
- * Definition of global letiables.
- */
-let sessions = {};
-let candidatesQueue = {};
-let kurentoClient = null;
-
-/*
- * Server startup
- */
-let asUrl = url.parse(argv.as_uri);
-let port = asUrl.port;
-let server = http.createServer(app).listen(port, function() {
-    console.log('Kurento Server started');
-});
-
-let wss = new ws.Server({
-    server : server,
-    path : '/signaling'
-});
+function nextUniqueId() {
+	idCounter++;
+	return idCounter.toString();
+}
 
 /*
  * Management of WebSocket messages
  */
-wss.on('connection', function(ws) {
-    let sessionId = null;
-    let request = ws.upgradeReq;
-    let response = {
-        writeHead : {}
-    };
+wss.on('connection', function (ws) {
 
-    sessionHandler(request, response, function(err) {
-        sessionId = request.session.id;
-        console.log('Connection received with sessionId ' + sessionId);
-    });
 
-    ws.on('error', function(error) {
-        console.log('Connection ' + sessionId + ' error');
-        stop(sessionId);
-    });
+	sessionId = nextUniqueId();
+	console.log("Connection ");
+	viewersList[sessionId] = {
+		"sessionID": sessionId,
+		"ws": ws
+	}
+	ws.send(JSON.stringify({
+		id: 'setSessionId',
+		sessionID: sessionId
+	}))
+	
+	ws.on('message', function (_message) {
+		var message = JSON.parse(_message);
+		
+		switch (message.id) {
+			case 'presenter':
 
-    ws.on('close', function() {
-        console.log('Connection ' + sessionId + ' closed');
-        stop(sessionId);
-    });
+				startPresenter(message.sessionID, ws, message.sdpOffer, function (error, sdpAnswer) {
+					//console.info(sessionId);
+					if (error) {
+						return ws.send(JSON.stringify({
+							id: 'presenterResponse',
+							response: 'rejected',
+							message: error
+						}));
+					}
+					presenterWS = ws
+					ws.send(JSON.stringify({
+						id: 'presenterResponse',
+						response: 'accepted',
+						sdpAnswer: sdpAnswer
+					}));
+					console.log(message.sessionID)
+				});
 
-    ws.on('message', function(_message) {
-        let message = JSON.parse(_message);
-        console.log('Connection ' + sessionId + ' received message ', message);
+				break;
 
-        switch (message.id) {
-        case 'start':
-            sessionId = request.session.id;
-            start(sessionId, ws, message.sdpOffer, function(error, sdpAnswer) {
-                if (error) {
-                    return ws.send(JSON.stringify({
-                        id : 'error',
-                        message : error
-                    }));
-                }
-                ws.send(JSON.stringify({
-                    id : 'startResponse',
-                    sdpAnswer : sdpAnswer
-                }));
-            });
-            break;
+			case 'viewer':
+				
+				startViewer(message.sessionID, ws, message.sdpOffer, function (error, sdpAnswer) {
+					if (error) {
+						return ws.send(JSON.stringify({
+							id: 'viewerResponse',
+							response: 'rejected',
+							message: error
+						}));
+					}
+					ws.send(JSON.stringify({
+						id: 'viewerResponse',
+						response: 'accepted',
+						sdpAnswer: sdpAnswer
+					}));
+				});
+				break;
 
-        case 'stop':
-            stop(sessionId);
-            break;
+			case 'stop':
+				stop(message.sessionID);
+				break;
 
-        case 'onIceCandidate':
-            onIceCandidate(sessionId, message.candidate);
-            break;
+			case 'onIceCandidate':
+				onIceCandidate(message.sessionID, message.candidate);
+				break;
+			
+			case 'presenterStart':
+				
+				for (var i in viewersList) {
+					var viewer = viewersList[i];
+				
+					if (viewer.ws && viewer.ws != presenterWS) {
+						console.log(viewer.sessionID)
+						viewer.ws.send(JSON.stringify({
+							id: 'canStartViewer'
+						}));
+					}
+				}
+				break;
 
-        default:
-            ws.send(JSON.stringify({
-                id : 'error',
-                message : 'Invalid message ' + message
-            }));
-            break;
-        }
+			case 'close':
+				console.log("Connection Closed " + message.sessionId);
+				viewersList.splice(message.sessionId, 1)
+				break;
 
-    });
+			default:
+				ws.send(JSON.stringify({
+					id: 'error',
+					message: 'Invalid message ' + message
+				}));
+				break;
+		}
+	});
 });
 
 /*
@@ -138,135 +167,239 @@ wss.on('connection', function(ws) {
 
 // Recover kurentoClient for the first time.
 function getKurentoClient(callback) {
-    if (kurentoClient !== null) {
-        return callback(null, kurentoClient);
-    }
+	if (kurentoClient !== null) {
+		return callback(null, kurentoClient);
+	}
 
-    kurento(argv.ws_uri, function(error, _kurentoClient) {
-        if (error) {
-            console.log("Could not find media server at address " + argv.ws_uri);
-            return callback("Could not find media server at address" + argv.ws_uri
-                    + ". Exiting with error " + error);
-        }
+	kurento(argv.ws_uri, function (error, _kurentoClient) {
+		if (error) {
+			console.log("Could not find media server at address " + argv.ws_uri);
+			return callback("Could not find media server at address" + argv.ws_uri
+				+ ". Exiting with error " + error);
+		}
 
-        kurentoClient = _kurentoClient;
-        callback(null, kurentoClient);
-    });
+		kurentoClient = _kurentoClient;
+		callback(null, kurentoClient);
+	});
 }
 
-function start(sessionId, ws, sdpOffer, callback) {
-    if (!sessionId) {
-        return callback('Cannot use undefined sessionId');
-    }
+function startPresenter(sessionId, ws, sdpOffer, callback) {
+	clearCandidatesQueue(sessionId);
 
-    getKurentoClient(function(error, kurentoClient) {
-        if (error) {
-            return callback(error);
-        }
+	if (presenter !== null) {
+		stop(sessionId);
+		return callback("Another user is currently acting as presenter. Try again later ...");
+	}
 
-        kurentoClient.create('MediaPipeline', function(error, pipeline) {
-            if (error) {
-                return callback(error);
-            }
+	presenter = {
+		id: sessionId,
+		pipeline: null,
+		webRtcEndpoint: null
+	}
 
-            createMediaElements(pipeline, ws, function(error, webRtcEndpoint) {
-                if (error) {
-                    pipeline.release();
-                    return callback(error);
-                }
+	getKurentoClient(function (error, kurentoClient) {
+		if (error) {
+			stop(sessionId);
+			return callback(error);
+		}
 
-                if (candidatesQueue[sessionId]) {
-                    while(candidatesQueue[sessionId].length) {
-                        let candidate = candidatesQueue[sessionId].shift();
-                        webRtcEndpoint.addIceCandidate(candidate);
-                    }
-                }
+		if (presenter === null) {
+			stop(sessionId);
+			return callback();
+		}
 
-                connectMediaElements(webRtcEndpoint, function(error) {
-                    if (error) {
-                        pipeline.release();
-                        return callback(error);
-                    }
+		kurentoClient.create('MediaPipeline', function (error, pipeline) {
+			if (error) {
+				stop(sessionId);
+				return callback(error);
+			}
 
-                    webRtcEndpoint.on('OnIceCandidate', function(event) {
-                        let candidate = kurento.getComplexType('IceCandidate')(event.candidate);
-                        ws.send(JSON.stringify({
-                            id : 'iceCandidate',
-                            candidate : candidate
-                        }));
-                    });
+			if (presenter === null) {
+				stop(sessionId);
+				return callback();
+			}
 
-                    webRtcEndpoint.processOffer(sdpOffer, function(error, sdpAnswer) {
-                        if (error) {
-                            pipeline.release();
-                            return callback(error);
-                        }
+			presenter.pipeline = pipeline;
+			pipeline.create('WebRtcEndpoint', function (error, webRtcEndpoint) {
+				if (error) {
+					stop(sessionId);
+					return callback(error);
+				}
 
-                        sessions[sessionId] = {
-                            'pipeline' : pipeline,
-                            'webRtcEndpoint' : webRtcEndpoint
-                        }
-                        return callback(null, sdpAnswer);
-                    });
+				if (presenter === null) {
+					stop(sessionId);
+					return callback();
+				}
 
-                    webRtcEndpoint.gatherCandidates(function(error) {
-                        if (error) {
-                            return callback(error);
-                        }
-                    });
-                });
-            });
-        });
-    });
+				presenter.webRtcEndpoint = webRtcEndpoint;
+
+				if (candidatesQueue[sessionId]) {
+					while (candidatesQueue[sessionId].length) {
+						var candidate = candidatesQueue[sessionId].shift();
+						webRtcEndpoint.addIceCandidate(candidate);
+					}
+				}
+
+				webRtcEndpoint.on('OnIceCandidate', function (event) {
+					var candidate = kurento.getComplexType('IceCandidate')(event.candidate);
+					ws.send(JSON.stringify({
+						id: 'iceCandidate',
+						candidate: candidate
+					}));
+				});
+
+				webRtcEndpoint.processOffer(sdpOffer, function (error, sdpAnswer) {
+					if (error) {
+						stop(sessionId);
+						return callback(error);
+					}
+
+					if (presenter === null) {
+						stop(sessionId);
+						return callback();
+					}
+
+					callback(null, sdpAnswer);
+				});
+
+				webRtcEndpoint.gatherCandidates(function (error) {
+					if (error) {
+						stop(sessionId);
+						return callback(error);
+					}
+				});
+			});
+		});
+	});
 }
 
-function createMediaElements(pipeline, ws, callback) {
-    pipeline.create('WebRtcEndpoint', function(error, webRtcEndpoint) {
-        if (error) {
-            return callback(error);
-        }
+function startViewer(sessionId, ws, sdpOffer, callback) {
+	console.info('start viewer');
+	//console.log('start viewer');
+	//clearCandidatesQueue(sessionId);
 
-        return callback(null, webRtcEndpoint);
-    });
+	if (presenter === null) {
+		stop(sessionId);
+		return callback();
+	}
+
+	presenter.pipeline.create('WebRtcEndpoint', function (error, webRtcEndpoint) {
+
+		if (error) {
+			console.log('error');
+			stop(sessionId);
+			return callback(error);
+		}
+		viewers[sessionId] = {
+			"webRtcEndpoint": webRtcEndpoint,
+			"ws": ws
+		}
+
+		if (presenter === null) {
+			stop(sessionId);
+			return callback();
+		}
+		
+		if (candidatesQueue[sessionId]) {
+			while (candidatesQueue[sessionId].length) {
+				var candidate = candidatesQueue[sessionId].shift();
+				webRtcEndpoint.addIceCandidate(candidate);
+			}
+		}
+
+		webRtcEndpoint.on('OnIceCandidate', function (event) {
+			var candidate = kurento.getComplexType('IceCandidate')(event.candidate);
+			ws.send(JSON.stringify({
+				id: 'iceCandidate',
+				candidate: candidate
+			}));
+		});
+
+		webRtcEndpoint.processOffer(sdpOffer, function (error, sdpAnswer) {
+			if (error) {
+				stop(sessionId);
+				return callback(error);
+			}
+			if (presenter === null) {
+				stop(sessionId);
+				return callback();
+			}
+			
+
+			presenter.webRtcEndpoint.connect(webRtcEndpoint, function (error) {
+				if (error) {
+					stop(sessionId);
+					return callback(error);
+				}
+				if (presenter === null) {
+					stop(sessionId);
+					return callback();
+				}
+
+				callback(null, sdpAnswer);
+				webRtcEndpoint.gatherCandidates(function (error) {
+					if (error) {
+						stop(sessionId);
+						return callback(error);
+					}
+				});
+			});
+		});
+	});
 }
 
-function connectMediaElements(webRtcEndpoint, callback) {
-    webRtcEndpoint.connect(webRtcEndpoint, function(error) {
-        if (error) {
-            return callback(error);
-        }
-        return callback(null);
-    });
+function clearCandidatesQueue(sessionId) {
+	if (candidatesQueue[sessionId]) {
+		delete candidatesQueue[sessionId];
+	}
 }
 
 function stop(sessionId) {
-    if (sessions[sessionId]) {
-        let pipeline = sessions[sessionId].pipeline;
-        console.info('Releasing pipeline');
-        pipeline.release();
+	if (presenter !== null && presenter.id == sessionId) {
+		for (var i in viewers) {
+			var viewer = viewers[i];
+			if (viewer.ws) {
+				viewer.ws.send(JSON.stringify({
+					id: 'stopCommunication'
+				}));
+			}
+		}
+		presenter.pipeline.release();
+		presenter = null;
+		viewers = [];
 
-        delete sessions[sessionId];
-        delete candidatesQueue[sessionId];
-    }
+	} else if (viewers[sessionId]) {
+		viewers[sessionId].webRtcEndpoint.release();
+		delete viewers[sessionId];
+	}
+
+	clearCandidatesQueue(sessionId);
+
+	if (viewers.length < 1 && !presenter) {
+		//console.log('Closing kurento client');
+		kurentoClient.close();
+		kurentoClient = null;
+	}
 }
 
 function onIceCandidate(sessionId, _candidate) {
-    let candidate = kurento.getComplexType('IceCandidate')(_candidate);
+	var candidate = kurento.getComplexType('IceCandidate')(_candidate);
 
-    if (sessions[sessionId]) {
-        console.info('Sending candidate');
-        let webRtcEndpoint = sessions[sessionId].webRtcEndpoint;
-        webRtcEndpoint.addIceCandidate(candidate);
-    }
-    else {
-        console.info('Queueing candidate');
-        if (!candidatesQueue[sessionId]) {
-            candidatesQueue[sessionId] = [];
-        }
-        candidatesQueue[sessionId].push(candidate);
-    }
+	if (presenter && presenter.id === sessionId && presenter.webRtcEndpoint) {
+		//console.info('Sending presenter candidate');
+		presenter.webRtcEndpoint.addIceCandidate(candidate);
+	}
+	else if (viewers[sessionId] && viewers[sessionId].webRtcEndpoint) {
+		//console.info('Sending viewer candidate');
+		viewers[sessionId].webRtcEndpoint.addIceCandidate(candidate);
+	}
+	else {
+		//console.info('Queueing candidate');
+		if (!candidatesQueue[sessionId]) {
+			candidatesQueue[sessionId] = [];
+		}
+		candidatesQueue[sessionId].push(candidate);
+	}
 }
 
 app.use(express.static(path.join(__dirname, 'static')));
-app.listen(3000,()=> console.log("Server is running ...")); 
- 
