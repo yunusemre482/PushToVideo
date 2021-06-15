@@ -21,8 +21,8 @@ import {AuthContext} from '../../components/context';
 export function DrawerContent(props) {
   const paperTheme = useTheme();
 
-  const {signOut, toggleTheme} = React.useContext(AuthContext);
-
+  const {authContext,currentUser} = React.useContext(AuthContext);
+  const {signOut, toggleTheme} =authContext;
   return (
     <View style={{flex: 1}}>
       <DrawerContentScrollView {...props}>
@@ -32,13 +32,13 @@ export function DrawerContent(props) {
               <Avatar.Image
                 source={{
                   uri:
-                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdGr3Y4jJcPGXMP6yvI70Fp1xrrN1AHLZPiw&usqp=CAU',
+                    'https://pbs.twimg.com/profile_images/1371736247341834240/2d6_hLRO_400x400.jpg',
                 }}
                 size={50}
               />
               <View style={{marginLeft: 15, flexDirection: 'column'}}>
-                <Title style={styles.title}>John Doe</Title>
-                <Caption style={styles.caption}>@j_doe</Caption>
+                <Title style={styles.title}>{currentUser.name}</Title>
+                <Caption style={styles.caption}>{currentUser.username}</Caption>
               </View>
             </View>
 

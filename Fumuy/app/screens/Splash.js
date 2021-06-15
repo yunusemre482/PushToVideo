@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     fontFamily:'DancingScript-Regular',
     fontSize: 36,
     marginTop: 29.1,
-    fontWeight: '300',
+    fontWeight: '400',
   },
 });
 

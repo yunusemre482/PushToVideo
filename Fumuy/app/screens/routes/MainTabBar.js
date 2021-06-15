@@ -3,15 +3,18 @@ import React from 'react';
 import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import HomeScreen from '../Home';
 import DetailsScreen from '../Detail';
 import ExploreScreen from '../Explore';
 import ProfileScreen from '../Profile';
+import EditProfileScreen from '../EditProfile';
 
 const HomeStack = createStackNavigator();
 const DetailsStack = createStackNavigator();
+const ProfileStack = createStackNavigator();
 
 const Tab = createMaterialBottomTabNavigator();
 
@@ -48,10 +51,10 @@ const MainTabBar = () => (
 
       <Tab.Screen
         name="Profile"
-        component={ProfileScreen}
+        component={ProfileStackScreen}
         options={{
           tabBarLabel: 'Profile',
-          tabBarColor: '#B57A14',
+          tabBarColor: '#FF6347',
           tabBarIcon: ({ color }) => (
             <Icon name="ios-person" color={color} size={26} />
           ),
@@ -97,4 +100,54 @@ const DetailsStackScreen = ({navigation}) => (
         )
         }} />
 </DetailsStack.Navigator>
+);
+
+const ProfileStackScreen = ({navigation}) => (
+  <ProfileStack.Navigator
+  screenOptions={{
+    headerStyle: {
+      backgroundColor: '#FF6347',
+    },
+    headerTintColor: '#fff',
+    headerTitleStyle: {
+      fontWeight: 'bold',
+    },
+  }}>
+  <ProfileStack.Screen
+    name="Profile"
+    component={ProfileScreen}
+    options={{
+      headerLeft:()=>(
+        <Icon.Button
+        name="ios-menu"
+        size={25}
+        backgroundColor="#FF6347"
+        onPress={() => navigation.openDrawer()}></Icon.Button>
+      ),
+      headerRight:()=>(
+        <FontAwesome5.Button
+        name="user-edit"
+        size={20}
+        backgroundColor="#FF6347"
+        onPress={() => navigation.navigate('EditProfile')}></FontAwesome5.Button>
+      ),
+    }}
+  />
+
+<ProfileStack.Screen
+    name="EditProfile"
+    component={EditProfileScreen}
+    options={({ navigation}) => ({
+      headerLeft:()=>(
+        <Icon.Button
+        name="chevron-back-outline"
+        size={25}
+        backgroundColor="#FF6347"
+        onPress={() => navigation.goBack()}></Icon.Button>
+      ),
+    })}
+  />
+
+  </ProfileStack.Navigator>
+
 );

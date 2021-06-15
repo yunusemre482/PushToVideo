@@ -60,6 +60,11 @@ PODS:
   - libevent (2.1.12)
   - NodeMediaClient (2.9.5)
   - OpenSSL-Universal (1.1.180)
+  - Permission-Camera (3.0.4):
+    - RNPermissions
+  - Permission-PhotoLibrary (3.0.4):
+    - RNPermissions
+  - QBImagePickerController (3.4.0)
   - RCT-Folly (2020.01.13.00):
     - boost-for-react-native
     - DoubleConversion
@@ -253,6 +258,19 @@ PODS:
     - React-jsi (= 0.64.1)
     - React-perflogger (= 0.64.1)
   - React-jsinspector (0.64.1)
+  - react-native-camera (3.44.1):
+    - React-Core
+    - react-native-camera/RCT (= 3.44.1)
+    - react-native-camera/RN (= 3.44.1)
+  - react-native-camera/RCT (3.44.1):
+    - React-Core
+  - react-native-camera/RN (3.44.1):
+    - React-Core
+  - react-native-image-crop-picker (0.4.4):
+    - QBImagePickerController (= 3.4.0)
+    - React (>= 0.26.1)
+    - RSKImageCropper (= 1.5.1)
+    - UIImage-Resize (~> 1.0)
   - react-native-nodemediaclient (0.2.16):
     - NodeMediaClient (= 2.9.5)
     - React
@@ -264,7 +282,14 @@ PODS:
     - React-Core
   - react-native-safe-area-context (3.2.0):
     - React-Core
-  - react-native-webrtc (1.89.1):
+  - react-native-utils-scale (1.0.2):
+    - React
+  - react-native-video (5.1.1):
+    - React-Core
+    - react-native-video/Video (= 5.1.1)
+  - react-native-video/Video (5.1.1):
+    - React-Core
+  - react-native-webrtc (1.89.3):
     - React-Core
   - React-perflogger (0.64.1)
   - React-RCTActionSheet (0.64.1):
@@ -330,13 +355,19 @@ PODS:
     - React-cxxreact (= 0.64.1)
     - React-jsi (= 0.64.1)
     - React-perflogger (= 0.64.1)
+  - ReactNativeIncallManager (3.3.0):
+    - React
   - RNCAsyncStorage (1.12.1):
     - React-Core
   - RNCMaskedView (0.1.11):
     - React
+  - RNDeviceInfo (8.1.3):
+    - React-Core
   - RNGestureHandler (1.10.3):
     - React-Core
-  - RNReanimated (2.1.0):
+  - RNPermissions (3.0.4):
+    - React-Core
+  - RNReanimated (2.2.0):
     - DoubleConversion
     - FBLazyVector
     - FBReactNativeSpec
@@ -367,8 +398,12 @@ PODS:
     - Yoga
   - RNScreens (3.1.1):
     - React-Core
+  - RNShare (6.0.1):
+    - React-Core
   - RNVectorIcons (8.1.0):
     - React-Core
+  - RSKImageCropper (1.5.1)
+  - UIImage-Resize (1.0.1)
   - Yoga (1.14.0)
   - YogaKit (1.18.1):
     - Yoga (~> 1.14)
@@ -397,6 +432,8 @@ DEPENDENCIES:
   - FlipperKit/FlipperKitUserDefaultsPlugin (~> 0.75.1)
   - FlipperKit/SKIOSNetworkPlugin (~> 0.75.1)
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
+  - Permission-Camera (from `../node_modules/react-native-permissions/ios/Camera`)
+  - Permission-PhotoLibrary (from `../node_modules/react-native-permissions/ios/PhotoLibrary`)
   - RCT-Folly (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
   - RCTRequired (from `../node_modules/react-native/Libraries/RCTRequired`)
   - RCTTypeSafety (from `../node_modules/react-native/Libraries/TypeSafety`)
@@ -410,9 +447,13 @@ DEPENDENCIES:
   - React-jsi (from `../node_modules/react-native/ReactCommon/jsi`)
   - React-jsiexecutor (from `../node_modules/react-native/ReactCommon/jsiexecutor`)
   - React-jsinspector (from `../node_modules/react-native/ReactCommon/jsinspector`)
+  - react-native-camera (from `../node_modules/react-native-camera`)
+  - react-native-image-crop-picker (from `../node_modules/react-native-image-crop-picker/ios`)
   - react-native-nodemediaclient (from `../node_modules/react-native-nodemediaclient`)
   - react-native-pager-view (from `../node_modules/react-native-pager-view`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
+  - react-native-utils-scale (from `../node_modules/react-native-utils-scale`)
+  - react-native-video (from `../node_modules/react-native-video`)
   - react-native-webrtc (from `../node_modules/react-native-webrtc`)
   - React-perflogger (from `../node_modules/react-native/ReactCommon/reactperflogger`)
   - React-RCTActionSheet (from `../node_modules/react-native/Libraries/ActionSheetIOS`)
@@ -426,11 +467,15 @@ DEPENDENCIES:
   - React-RCTVibration (from `../node_modules/react-native/Libraries/Vibration`)
   - React-runtimeexecutor (from `../node_modules/react-native/ReactCommon/runtimeexecutor`)
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
+  - ReactNativeIncallManager (from `../node_modules/react-native-incall-manager`)
   - "RNCAsyncStorage (from `../node_modules/@react-native-community/async-storage`)"
   - "RNCMaskedView (from `../node_modules/@react-native-community/masked-view`)"
+  - RNDeviceInfo (from `../node_modules/react-native-device-info`)
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
+  - RNPermissions (from `../node_modules/react-native-permissions`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
+  - RNShare (from `../node_modules/react-native-share`)
   - RNVectorIcons (from `../node_modules/react-native-vector-icons`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
@@ -448,6 +493,9 @@ SPEC REPOS:
     - libevent
     - NodeMediaClient
     - OpenSSL-Universal
+    - QBImagePickerController
+    - RSKImageCropper
+    - UIImage-Resize
     - YogaKit
 
 EXTERNAL SOURCES:
@@ -459,6 +507,10 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/React/FBReactNativeSpec"
   glog:
     :podspec: "../node_modules/react-native/third-party-podspecs/glog.podspec"
+  Permission-Camera:
+    :path: "../node_modules/react-native-permissions/ios/Camera"
+  Permission-PhotoLibrary:
+    :path: "../node_modules/react-native-permissions/ios/PhotoLibrary"
   RCT-Folly:
     :podspec: "../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec"
   RCTRequired:
@@ -481,12 +533,20 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/jsiexecutor"
   React-jsinspector:
     :path: "../node_modules/react-native/ReactCommon/jsinspector"
+  react-native-camera:
+    :path: "../node_modules/react-native-camera"
+  react-native-image-crop-picker:
+    :path: "../node_modules/react-native-image-crop-picker/ios"
   react-native-nodemediaclient:
     :path: "../node_modules/react-native-nodemediaclient"
   react-native-pager-view:
     :path: "../node_modules/react-native-pager-view"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
+  react-native-utils-scale:
+    :path: "../node_modules/react-native-utils-scale"
+  react-native-video:
+    :path: "../node_modules/react-native-video"
   react-native-webrtc:
     :path: "../node_modules/react-native-webrtc"
   React-perflogger:
@@ -513,16 +573,24 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/runtimeexecutor"
   ReactCommon:
     :path: "../node_modules/react-native/ReactCommon"
+  ReactNativeIncallManager:
+    :path: "../node_modules/react-native-incall-manager"
   RNCAsyncStorage:
     :path: "../node_modules/@react-native-community/async-storage"
   RNCMaskedView:
     :path: "../node_modules/@react-native-community/masked-view"
+  RNDeviceInfo:
+    :path: "../node_modules/react-native-device-info"
   RNGestureHandler:
     :path: "../node_modules/react-native-gesture-handler"
+  RNPermissions:
+    :path: "../node_modules/react-native-permissions"
   RNReanimated:
     :path: "../node_modules/react-native-reanimated"
   RNScreens:
     :path: "../node_modules/react-native-screens"
+  RNShare:
+    :path: "../node_modules/react-native-share"
   RNVectorIcons:
     :path: "../node_modules/react-native-vector-icons"
   Yoga:
@@ -545,6 +613,9 @@ SPEC CHECKSUMS:
   libevent: 4049cae6c81cdb3654a443be001fb9bdceff7913
   NodeMediaClient: 296bdebb9de9913a0c93bdc3e04136e091ed9775
   OpenSSL-Universal: 1aa4f6a6ee7256b83db99ec1ccdaa80d10f9af9b
+  Permission-Camera: 74dc395c37a06ebe915069c5dca954c7a2a5a2e3
+  Permission-PhotoLibrary: 440f206f0d36e5951c4c9b28567f60471fdddfb5
+  QBImagePickerController: d54cf93db6decf26baf6ed3472f336ef35cae022
   RCT-Folly: ec7a233ccc97cc556cf7237f0db1ff65b986f27c
   RCTRequired: ec2ebc96b7bfba3ca5c32740f5a0c6a014a274d2
   RCTTypeSafety: 22567f31e67c3e088c7ac23ea46ab6d4779c0ea5
@@ -556,10 +627,14 @@ SPEC CHECKSUMS:
   React-jsi: 5de8204706bd872b78ea646aee5d2561ca1214b6
   React-jsiexecutor: 124e8f99992490d0d13e0649d950d3e1aae06fe9
   React-jsinspector: 500a59626037be5b3b3d89c5151bc3baa9abf1a9
+  react-native-camera: 7bf59f2728ffb019fa25e60a225d2c57e1a8f0f6
+  react-native-image-crop-picker: f29239b913544415dc0018b625ce98d62e046311
   react-native-nodemediaclient: beb495badb7d204d13129e5f9e630e79314a82c5
   react-native-pager-view: c60a26be051a4b88427f2475e173b5c112e98d17
   react-native-safe-area-context: f0906bf8bc9835ac9a9d3f97e8bde2a997d8da79
-  react-native-webrtc: ccb0c21eb4fb04326648fbdb4a5d49977e2cf274
+  react-native-utils-scale: f58a638be76813ccacde9330bc786a2c52486036
+  react-native-video: 0bb76b6d6b77da3009611586c7dbf817b947f30e
+  react-native-webrtc: 2e8095a43dd3d95ce796d9750280c0f48aadad3d
   React-perflogger: aad6d4b4a267936b3667260d1f649b6f6069a675
   React-RCTActionSheet: fc376be462c9c8d6ad82c0905442fd77f82a9d2a
   React-RCTAnimation: ba0a1c3a2738be224a08092fa7f1b444ab77d309
@@ -572,15 +647,21 @@ SPEC CHECKSUMS:
   React-RCTVibration: 4b99a7f5c6c0abbc5256410cc5425fb8531986e1
   React-runtimeexecutor: ff951a0c241bfaefc4940a3f1f1a229e7cb32fa6
   ReactCommon: bedc99ed4dae329c4fcf128d0c31b9115e5365ca
+  ReactNativeIncallManager: a840ef75640518065742a893e6c6ff98ee820039
   RNCAsyncStorage: b03032fdbdb725bea0bd9e5ec5a7272865ae7398
   RNCMaskedView: 0e1bc4bfa8365eba5fbbb71e07fbdc0555249489
+  RNDeviceInfo: 8d3a29207835f972bce883723882980143270d55
   RNGestureHandler: a479ebd5ed4221a810967000735517df0d2db211
-  RNReanimated: b8c8004b43446e3c2709fe64b2b41072f87428ad
+  RNPermissions: c46788f4cd402287425983e04a4c9bb4356036eb
+  RNReanimated: 9c13c86454bfd54dab7505c1a054470bfecd2563
   RNScreens: bd1523c3bde7069b8e958e5a16e1fc7722ad0bdd
+  RNShare: 755de6bac084428f8fd8fb54c376f126f40e560c
   RNVectorIcons: 31cebfcf94e8cf8686eb5303ae0357da64d7a5a4
+  RSKImageCropper: edd65fedb3734332818deb139906d6b7f54b8a44
+  UIImage-Resize: fa776860f10e6900bbaf53a73e494bdceaaccc77
   Yoga: a7de31c64fe738607e7a3803e3f591a4b1df7393
   YogaKit: f782866e155069a2cca2517aafea43200b01fd5a
 
-PODFILE CHECKSUM: e6d341decf877a480d209cac6e464be441d33a19
+PODFILE CHECKSUM: a8274926ac19f45dfa0754907767befd984d9c72
 
 COCOAPODS: 1.10.1

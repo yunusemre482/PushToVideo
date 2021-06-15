@@ -11,7 +11,6 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
 import api from '../api/api';
 import {AuthContext} from '../components/context';
-import bcrypt from 'react-native-bcrypt';
 
 import * as Animatable from 'react-native-animatable';
 
@@ -22,11 +21,11 @@ export default function SignIn({navigation}) {
     check_textInputChange: false,
     secureTextEntry: true,
   });
-  const {signIn} = React.useContext(AuthContext);
-
+  const { authContext } = React.useContext(AuthContext);
+  const {signIn}=authContext;
   const handleSubmit = async () => {
     try{
-      fetch("http://localhost:3000/api/user/signin",{
+      fetch("http://localhost:4000/api/user/signin",{
         method:"POST",
         headers: {
          'Content-Type': 'application/json'
@@ -41,7 +40,7 @@ export default function SignIn({navigation}) {
            try {
              console.log(info);
              if(info.message==true){
-              signIn(info.message);
+              signIn(info.user);
              }else{
                alert(info.message);
              }
@@ -83,7 +82,7 @@ export default function SignIn({navigation}) {
   };
   return (
     <View style={styles.container}>
-      <StatusBar backgroundColor="coral" barStyle="light-content" />
+      <StatusBar backgroundColor="#00377b" barStyle="light-content" />
       <View style={styles.header}>
         <Text style={styles.bigTitle}>Let's Connect with Fumuy</Text>
       </View>
@@ -188,7 +187,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontFamily: 'DancingScript-SemiBold',
     fontSize: 32,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   forgot: {
     marginTop: 12,

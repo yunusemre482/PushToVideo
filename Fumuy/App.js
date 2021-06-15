@@ -32,14 +32,12 @@ LogBox.ignoreLogs(['Sending...']);
 const Drawer = createDrawerNavigator();
 
 const App = () => { 
-  // const [isLoading, setIsLoading] = React.useState(true);
-  // const [userToken, setUserToken] = React.useState(null);
 
   const [isDarkTheme, setIsDarkTheme] = React.useState(false);
 
   const initialLoginState = {
     isLoading: true,
-    userName: null,
+    user: AsyncStorage.getItem("user"),
     userToken: null,
   };
 
@@ -78,21 +76,21 @@ const App = () => {
       case 'LOGIN':
         return {
           ...prevState,
-          userName: action.id,
+          user: action.user,
           userToken: action.token,
           isLoading: false,
         };
       case 'LOGOUT':
         return {
           ...prevState,
-          userName: null,
+          user: null,
           userToken: null,
           isLoading: false,
         };
       case 'REGISTER':
         return {
           ...prevState,
-          userName: action.id,
+          user: action.user,
           userToken: action.token,
           isLoading: false,
         }
@@ -107,22 +105,17 @@ const App = () => {
   const authContext = React.useMemo(
     () => ({
       signIn: async user => {
-        // setUserToken('fgkj');
-        // setIsLoading(false);
-        const userToken = String(user.surname);
-        const userName = user.name;
 
+        const userToken = String(user.name);
         try {
           await AsyncStorage.setItem('userToken', userToken);
         } catch (e) {
           console.log(e);
         }
-        // console.log('user token: ', userToken);
-        dispatch({type: 'LOGIN', id: userName, token: userToken});
+        dispatch({type: 'LOGIN', user: user, token: userToken});
       },
       signOut: async () => {
-        // setUserToken(null);
-        // setIsLoading(false);
+
         try {
           await AsyncStorage.removeItem('userToken');
         } catch (e) {
@@ -133,7 +126,8 @@ const App = () => {
       signUp: () => {
         // setUserToken('fgkj');
         // setIsLoading(false);
-      },
+      }
+      ,
       toggleTheme: () => {
         setIsDarkTheme( isDarkTheme => !isDarkTheme);
       },
@@ -142,11 +136,14 @@ const App = () => {
   );
 
   useEffect(() => {
-    setTimeout(async () => {
-      // setIsLoading(false);
+    setTimeout(async (prevState) => {
+
       let userToken;
       userToken = null;
       try {
+        if(loginState.user!==prevState.user){
+          AsyncStorage.setItem("user", loginState.user);
+        }
         userToken = await AsyncStorage.getItem('userToken');
       } catch (e) {
         console.log(e);
@@ -166,7 +163,7 @@ const App = () => {
   }
   return (
     <PaperProvider theme={theme}>
-    <AuthContext.Provider value={authContext}>
+    <AuthContext.Provider value={{authContext:authContext,currentUser:loginState.user}}>
       <NavigationContainer theme={theme}>
         {loginState.userToken !== null ? (
           <Drawer.Navigator
